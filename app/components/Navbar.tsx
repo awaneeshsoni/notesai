@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { Button } from "@/components/ui/button";
+import { supabase } from '../lib/supabase';
+import { Button } from "../components/ui/button";
 
 const Navbar = () => {
   const [session, setSession] = useState<any>(null);
