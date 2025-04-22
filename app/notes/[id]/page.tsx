@@ -128,6 +128,7 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
           .insert([{
             title: values.title,
             content: values.content,
+            user_id: (await supabase.auth.getSession()).data.session?.user.id,
           }])
           .select()
 
