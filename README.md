@@ -1,3 +1,4 @@
+# notesai
 # Notes AI App Workflow
 
 ## **Folder structure**:

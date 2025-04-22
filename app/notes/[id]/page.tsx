@@ -11,7 +11,6 @@ import { summarizeNote } from '@/lib/gemini';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,11 +23,11 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "Title must be at least 2 characters.",
+  title: z.string().min(3, {
+    message: "Title must be at least 1 characters.",
   }),
-  content: z.string().min(10, {
-    message: "Content must be at least 10 characters.",
+  content: z.string().min(3, {
+    message: "Content must be at least 1 characters.",
   }),
 })
 
@@ -66,7 +65,7 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
     queryKey: ['note', id],
     queryFn: () => getNote(id),
     enabled: !isNew && id !== 'new',
-    onSuccess: (data) => {
+    onSuccess: (data: { content: any; }) => {
       setCurrentContent(data?.content || '');
     },
   });
