@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Note } from 'types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import NoteCard from '@/components/NoteCard';
-import { Button } from "@/components/ui/button";
+import NoteCard from '../components/NoteCard';
+import { Button } from "../components/ui/button";
 
 async function getNotes(userId: string) {
   const { data, error } = await supabase

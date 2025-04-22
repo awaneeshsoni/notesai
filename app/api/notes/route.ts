@@ -1,4 +1,4 @@
-import { supabase } from './lib/supabase.ts'
+import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   const { data, error } = await supabase.from('notes').select('*');
