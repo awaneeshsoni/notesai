@@ -55,8 +55,8 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [currentContent, setCurrentContent] = useState('');
-  const [summary, setSummary] = useState<string | null>(null);  // Summary State
-  const [isSummarizing, setIsSummarizing] = useState(false); // Summarizing Loading State
+  const [summary, setSummary] = useState<string | null>(null);  
+  const [isSummarizing, setIsSummarizing] = useState(false); 
 
   useEffect(() => {
     setIsNew(id === 'new');

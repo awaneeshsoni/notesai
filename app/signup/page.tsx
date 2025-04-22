@@ -25,7 +25,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/notes`, //  Ensure correct redirect after sign-in
+        redirectTo: `${window.location.origin}/notes`, 
       },
     });
 
