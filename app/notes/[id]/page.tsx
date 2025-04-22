@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { RotateCw } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -54,8 +55,10 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [currentContent, setCurrentContent] = useState('');
-  const [summary, setSummary] = useState<string | null>(null);  
-  const [isSummarizing, setIsSummarizing] = useState(false); 
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setIsNew(id === 'new');
@@ -91,62 +94,72 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
     if (note) {
       const confirmDelete = window.confirm("Are you sure you want to delete this note?");
       if (confirmDelete) {
-        const { error } = await supabase
-          .from('notes')
-          .delete()
-          .eq('id', note.id);
+        setIsDeleting(true);
+        try {
+          const { error } = await supabase
+            .from('notes')
+            .delete()
+            .eq('id', note.id);
 
-        if (error) {
-          console.error("Error deleting note:", error);
-        } else {
-          queryClient.invalidateQueries(['notes']);
-          router.push('/notes');
+          if (error) {
+            console.error("Error deleting note:", error);
+          } else {
+            queryClient.invalidateQueries(['notes']);
+            router.push('/notes');
+          }
+        } finally {
+          setIsDeleting(false);
         }
       }
     }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
     const isNew = !note;
 
-    if (isNew) {
-      const { data, error } = await supabase
-        .from('notes')
-        .insert([{
-          title: values.title,
-          content: values.content,
-          user_id: (await supabase.auth.getSession()).data.session?.user.id,
-        }])
-        .select()
+    try {
+      if (isNew) {
+        const { data, error } = await supabase
+          .from('notes')
+          .insert([{
+            title: values.title,
+            content: values.content,
+            user_id: (await supabase.auth.getSession()).data.session?.user.id,
+          }])
+          .select()
 
-      if (error) {
-        console.error("Error creating note:", error);
-        setErrorMessage(`Error creating note: ${error.message}`);
+        if (error) {
+          console.error("Error creating note:", error);
+          setErrorMessage(`Error creating note: ${error.message}`);
 
+        } else {
+          queryClient.invalidateQueries(['notes']);
+          router.push('/notes');
+          setSuccessMessage("Note created successfully!");
+        }
       } else {
-        queryClient.invalidateQueries(['notes']);
-        router.push('/notes');
-        setSuccessMessage("Note created successfully!");
-      }
-    } else {
-      const { data, error } = await supabase
-        .from('notes')
-        .update({ title: values.title, content: values.content })
-        .eq('id', note.id)
-        .select()
+        const { data, error } = await supabase
+          .from('notes')
+          .update({ title: values.title, content: values.content })
+          .eq('id', note.id)
+          .select()
 
-      if (error) {
-        console.error("Error updating note:", error);
-        setErrorMessage(`Error updating note: ${error.message}`);
+        if (error) {
+          console.error("Error updating note:", error);
+          setErrorMessage(`Error updating note: ${error.message}`);
 
-      } else {
-        queryClient.invalidateQueries(['notes']);
-        queryClient.invalidateQueries(['note', note.id]);
-        router.push('/notes');
-        setSuccessMessage("Note updated successfully!");
+        } else {
+          queryClient.invalidateQueries(['notes']);
+          queryClient.invalidateQueries(['note', note.id]);
+          router.push('/notes');
+          setSuccessMessage("Note updated successfully!");
+        }
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -187,9 +200,22 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
           <ArrowLeftIcon className="h-4 w-4 mr-2" />
           Back to Notes
         </Button>
-        <Button variant="destructive" onClick={handleDelete} className="mr-2">
-          <TrashIcon className="h-4 w-4 mr-2" />
-          Delete
+        <Button
+          variant="destructive"
+          onClick={handleDelete}
+          className="mr-2"
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <>
+              Deleting... <RotateCw className="ml-2 h-4 w-4 animate-spin" />
+            </>
+          ) : (
+            <>
+              <TrashIcon className="h-4 w-4 mr-2" />
+              Delete
+            </>
+          )}
         </Button>
       </div>
 
@@ -247,13 +273,23 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
           )}
 
           <div className="flex justify-between items-center">
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  Submitting... <RotateCw className="ml-2 h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
               <Button
                 onClick={handleSummarize}
                 disabled={isSummarizing}
               >
                 {isSummarizing ? (
-                  "Summarizing..."
+                  <>
+                    Summarizing... <RotateCw className="ml-2 h-4 w-4 animate-spin" />
+                  </>
                 ) : (
                   <>
                     <LightBulbIcon className="h-4 w-4 mr-2" />
