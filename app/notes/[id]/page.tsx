@@ -1,4 +1,3 @@
-// app/notes/[id]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,10 +24,10 @@ import * as z from "zod"
 import { RotateCw } from "lucide-react";
 
 const formSchema = z.object({
-  title: z.string().min(3, {
+  title: z.string().min(1, { 
     message: "Title must be at least 1 characters.",
   }),
-  content: z.string().min(3, {
+  content: z.string().min(1, { 
     message: "Content must be at least 1 characters.",
   }),
 })
@@ -60,6 +59,33 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null); 
+    const [isSessionLoading, setIsSessionLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSession = async () => {
+            setIsSessionLoading(true);
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error("Error getting session:", error);
+                    router.push('/login'); 
+                    return;
+                }
+
+                if (!session?.user?.id) {
+                    router.push('/login'); 
+                    return;
+                }
+
+                setUserId(session.user.id); 
+            } finally {
+                setIsSessionLoading(false); 
+            }
+        };
+
+        fetchSession();
+    }, [router]); 
 
   useEffect(() => {
     setIsNew(id === 'new');
@@ -68,7 +94,7 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
   const { data: note, isLoading, isError } = useQuery({
     queryKey: ['note', id],
     queryFn: () => getNote(id),
-    enabled: !isNew && id !== 'new',
+    enabled: !isNew && id !== 'new' && !isSessionLoading && userId !== null, // Ensure session is loaded and userId is available
     onSuccess: (data: { content: any; }) => {
       setCurrentContent(data?.content || '');
     },
@@ -119,16 +145,22 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
-    const isNew = !note;
+    const isNewNote = !note;
 
     try {
-      if (isNew) {
+      if (isNewNote) {
+        if (!userId) {
+          console.error("User ID is not available.");
+          setErrorMessage("User ID is not available. Please refresh the page or log in again.");
+          return;
+        }
+
         const { data, error } = await supabase
           .from('notes')
           .insert([{
             title: values.title,
             content: values.content,
-            user_id: (await supabase.auth.getSession()).data.session?.user.id,
+            user_id: userId,
           }])
           .select()
 
@@ -177,6 +209,13 @@ export default function NoteDetailPage({ params }: { params: { id: string } }) {
         }
     };
 
+    if (isSessionLoading) {
+        return (
+            <div className="container mx-auto py-10">
+                <div>Loading session...</div>
+            </div>
+        );
+    }
 
   if (isLoading) {
     return (
